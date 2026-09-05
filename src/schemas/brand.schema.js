@@ -1,19 +1,21 @@
 import { z } from 'zod';
 
-// Esquema para crear una marca (POST)
 export const createBrandSchema = z.object({
   name: z
-    .string({ required_error: 'El nombre de la marca es obligatorio' })
-    .min(3, 'El nombre debe tener al menos 3 caracteres')
-    .max(80, 'El nombre no puede exceder los 80 caracteres'),
+    .string()
+    .trim()
+    .min(2, 'El nombre debe tener al menos 2 caracteres')
+    .max(80, 'El nombre no puede superar los 80 caracteres'),
 
   country: z
     .string()
-    .max(40, 'El país no puede superar los 40 caracteres')
+    .trim()
+    .max(60, 'El país no puede superar los 60 caracteres')
     .optional(),
 
   website: z
     .string()
-    .url()
+    .url('La página web debe ser una URL válida')
+    .max(200, 'La URL no puede superar los 200 caracteres')
     .optional()
 });
