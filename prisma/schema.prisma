@@ -1,4 +1,4 @@
-generator client {
+ generator client {
   provider = "prisma-client-js"
 }
 
@@ -15,10 +15,23 @@ model Category {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  // Relación 1:N con Productos (Una categoría tiene muchos productos)
+  // Relación 1:N con Productos
   products    Product[]
 
   @@map("categories")
+}
+
+// Modelo de Marca
+model Brand {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique @db.VarChar(80)
+  country  String?   @db.VarChar(60)
+  website  String?   @db.VarChar(200)
+
+  // Relación 1:N con Productos
+  products Product[]
+
+  @@map("brands")
 }
 
 // Modelo de Producto
@@ -33,9 +46,30 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Relación N:1 con Categoría (Cada producto pertenece a una categoría)
+  // Relación N:1 con Categoría
   categoryId  Int
   category    Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
 
+  // Relación N:1 con Marca
+  brandId     Int?
+  brand       Brand?   @relation(fields: [brandId], references: [id])
+
+  // Relación 1:N con Reseñas
+  reviews     Review[]
+
   @@map("products")
+}
+
+// Modelo de Reseña
+model Review {
+  id        Int      @id @default(autoincrement())
+  author    String   @db.VarChar(100)
+  rating    Int
+  comment   String   @db.VarChar(500)
+
+  // Relación N:1 con Producto
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("reviews")
 }
