@@ -5,8 +5,6 @@ import productRoutes from './product.routes.js';
 import brandRoutes from './brand.routes.js';
 import reviewRoutes from './review.routes.js';
 
-
-
 const apiRouter = Router();
 
 // Estado de la API (Health check)
@@ -22,6 +20,6 @@ apiRouter.get('/health', (req, res) => {
 apiRouter.use('/categories', categoryRoutes);
 apiRouter.use('/products', productRoutes);
 apiRouter.use('/brands', brandRoutes);
-
+apiRouter.use('/products/:id/reviews', reviewRoutes);
 
 export default apiRouter;
