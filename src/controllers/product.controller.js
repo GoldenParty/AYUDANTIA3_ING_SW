@@ -2,33 +2,56 @@ import prisma from '../config/prisma.js';
 
 /**
  * Obtener todos los productos con filtros avanzados
- * GET /api/products?categoryId=1&minPrice=10000&maxPrice=50000&inStock=true
+ * GET /api/products?categoryId=1&brandId=1&minPrice=10000&maxPrice=50000&inStock=true
  */
 export const getAllProducts = async (req, res, next) => {
   try {
-    const { categoryId, minPrice, maxPrice, inStock } = req.query;
+    const { categoryId, brandId, minPrice, maxPrice, inStock } = req.query;
 
     const where = {};
 
+    // Filtrar por categoría
     if (categoryId !== undefined) {
       where.categoryId = Number(categoryId);
     }
 
-    if (minPrice !== undefined || maxPrice !== undefined) {
-      where.price = {};
-      if (minPrice !== undefined) where.price.gte = Number(minPrice);
-      if (maxPrice !== undefined) where.price.lte = Number(maxPrice);
+    // Filtrar por marca
+    if (brandId !== undefined) {
+      where.brandId = Number(brandId);
     }
 
+    // Filtrar por precio mínimo y/o máximo
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      where.price = {};
+
+      if (minPrice !== undefined) {
+        where.price.gte = Number(minPrice);
+      }
+
+      if (maxPrice !== undefined) {
+        where.price.lte = Number(maxPrice);
+      }
+    }
+
+    // Filtrar según stock
     if (inStock !== undefined) {
       const onlyInStock = inStock === true || inStock === 'true';
-      where.stock = onlyInStock ? { gt: 0 } : 0;
+
+      where.stock = onlyInStock
+        ? { gt: 0 }
+        : 0;
     }
 
     const products = await prisma.product.findMany({
       where,
       include: {
         category: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        brand: {
           select: {
             id: true,
             name: true
@@ -58,14 +81,19 @@ export const getProductById = async (req, res, next) => {
     const productId = Number(req.params.id);
 
     const product = await prisma.product.findUnique({
-      where: { id: productId },
+      where: {
+        id: productId
+      },
       include: {
-        category: true
+        category: true,
+        brand: true
       }
     });
 
     if (!product) {
-      return res.status(404).json({ error: 'Producto no encontrado' });
+      return res.status(404).json({
+        error: 'Producto no encontrado'
+      });
     }
 
     res.status(200).json(product);
@@ -80,11 +108,21 @@ export const getProductById = async (req, res, next) => {
  */
 export const createProduct = async (req, res, next) => {
   try {
-    const { name, description, price, stock, sku, isAvailable, categoryId } = req.body;
+    const {
+      name,
+      description,
+      price,
+      stock,
+      sku,
+      isAvailable,
+      categoryId
+    } = req.body;
 
-    // 1. Verificar si la categoría existe antes de asociarla
+    // Verificar si la categoría existe antes de asociarla
     const categoryExists = await prisma.category.findUnique({
-      where: { id: categoryId }
+      where: {
+        id: categoryId
+      }
     });
 
     if (!categoryExists) {
@@ -93,7 +131,7 @@ export const createProduct = async (req, res, next) => {
       });
     }
 
-    // 2. Crear el producto
+    // Crear el producto
     const newProduct = await prisma.product.create({
       data: {
         name,
@@ -105,7 +143,8 @@ export const createProduct = async (req, res, next) => {
         categoryId
       },
       include: {
-        category: true
+        category: true,
+        brand: true
       }
     });
 
@@ -125,13 +164,19 @@ export const createProduct = async (req, res, next) => {
 export const updateProduct = async (req, res, next) => {
   try {
     const productId = Number(req.params.id);
-    const updateData = { ...req.body };
+
+    const updateData = {
+      ...req.body
+    };
 
     // Si intenta cambiar de categoría, validar que exista
     if (updateData.categoryId) {
       const categoryExists = await prisma.category.findUnique({
-        where: { id: updateData.categoryId }
+        where: {
+          id: updateData.categoryId
+        }
       });
+
       if (!categoryExists) {
         return res.status(404).json({
           error: `La categoría con ID ${updateData.categoryId} no existe.`
@@ -140,10 +185,13 @@ export const updateProduct = async (req, res, next) => {
     }
 
     const updatedProduct = await prisma.product.update({
-      where: { id: productId },
+      where: {
+        id: productId
+      },
       data: updateData,
       include: {
-        category: true
+        category: true,
+        brand: true
       }
     });
 
@@ -165,7 +213,9 @@ export const deleteProduct = async (req, res, next) => {
     const productId = Number(req.params.id);
 
     await prisma.product.delete({
-      where: { id: productId }
+      where: {
+        id: productId
+      }
     });
 
     res.status(200).json({
